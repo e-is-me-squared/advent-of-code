@@ -6,6 +6,7 @@ const NUMBERS: [char; 10] = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
 enum Type {
     Dot,
     Symbol,
+    Gear,
     Number,
 }
 
@@ -21,6 +22,9 @@ impl Group {
     fn get_type(&self) -> Type {
         if self.value.contains(".") {
             return Type::Dot;
+        }
+        if self.value.contains("*") {
+            return Type::Gear;
         }
         if NUMBERS.contains(&self.value.chars().next().unwrap()) {
             return Type::Number;
@@ -108,9 +112,7 @@ impl Grid {
             index += 1;
         }
 
-        Grid {
-            rows,
-        }
+        Grid { rows }
     }
 
     fn get_groups_of_type(&self, group_type: Type) -> Vec<&Group> {
@@ -180,12 +182,6 @@ impl Grid {
         }
         groups
     }
-
-    // fn get_group_at(&self, row: u32, col: u32) -> &Group {
-    //     let target_row = self.rows.get(row as usize);
-    //     let group = target_row.unwrap().get_group_at(col).unwrap();
-    //     group
-    // }
 }
 
 fn main() {
@@ -194,6 +190,9 @@ fn main() {
 
     let result = part_one(&grid);
     println!("part one result {:?}", result);
+
+    let result = part_two(&grid);
+    println!("part two result {:?}", result);
 }
 
 fn part_one(grid: &Grid) -> u32 {
@@ -204,10 +203,32 @@ fn part_one(grid: &Grid) -> u32 {
         let surrounding_groups = grid.get_surrounding_groups(&number);
         let has_symbol_nabor = surrounding_groups
             .iter()
-            .any(|x| x.get_type() == Type::Symbol);
+            .any(|x| x.get_type() == Type::Symbol || x.get_type() == Type::Gear);
 
         if has_symbol_nabor {
             result += number.value.parse::<u32>().unwrap();
+        }
+    }
+
+    result
+}
+
+fn part_two(grid: &Grid) -> u32 {
+    let all_gears = grid.get_groups_of_type(Type::Gear);
+    let mut result = 0;
+
+    for gear in all_gears {
+        let surrounding_groups = grid.get_surrounding_groups(&gear);
+
+        let number_nabors = surrounding_groups
+            .iter()
+            .filter(|x| x.get_type() == Type::Number).collect::<Vec<_>>();
+
+        if number_nabors.len() == 2 {
+            let first_number = number_nabors.first().unwrap().value.parse::<u32>().unwrap();
+            let second_number = number_nabors.last().unwrap().value.parse::<u32>().unwrap();
+
+            result += first_number * second_number;
         }
     }
 
@@ -220,6 +241,26 @@ mod tests {
 
     #[test]
     fn test_part_one() {
+        let data = "467..114..
+...*......
+..35..633.
+......#...
+617*......
+.....+.58.
+..592.....
+......755.
+...$.*....
+.664.598.."
+            .to_string();
+
+        let grid = Grid::from_data(&data);
+        let result = part_one(&grid);
+
+        assert_eq!(result, 4361);
+    }
+
+    #[test]
+    fn test_part_two() {
         let data = "467..114.
 ...*.....
 ..35..633
@@ -233,23 +274,8 @@ mod tests {
             .to_string();
 
         let grid = Grid::from_data(&data);
-        let result = part_one(&grid);
+        let result = part_two(&grid);
 
-        assert_eq!(result, 4361);
+        assert_eq!(result, 467835);
     }
-
-    #[test]
-    fn test_surrounding() {
-        let data = "
-467..114*
-..*......
-"
-            .to_string();
-
-        let grid = Grid::from_data(&data);
-        let result = part_one(&grid);
-
-        assert_eq!(result, 467 + 114);
-    }
-
 }
