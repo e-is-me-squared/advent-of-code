@@ -7,16 +7,56 @@ struct ConvertInfo {
 }
 
 struct Converter {
+    from: String,
+    to: String,
     values: Vec<ConvertInfo>,
 }
 
 impl Converter {
-    fn new() -> Converter {
+    fn new(data: String) -> Converter {
+        let mut words = data.split_whitespace();
+        let first_word = words.next().unwrap();
+        let mut first_word = first_word.split("-");
+
+        let from = first_word.next().unwrap().to_string();
+        first_word.next();
+        let to = first_word.next().unwrap().to_string();
+
+        let mut data = data.split(":");
+        data.next();
+        let mut data = data.next().unwrap().lines();
+        data.next();
+
+        let data = data.map(|line| {
+            let mut line = line.split_whitespace();
+            let mut parse_next_number = || line.next().unwrap().parse::<u32>().unwrap();
+
+            ConvertInfo {
+                destination: parse_next_number(),
+                source: parse_next_number(),
+                range: parse_next_number(),
+            }
+        });
+
         Converter {
-            values: Vec::new(),
+            from,
+            to,
+            values: data.collect(),
         }
     }
+
+    fn convert(&self, value: u32) -> u32 {
+        let mut result = value;
+        for info in &self.values {
+            if value >= info.source && value < info.source + info.range {
+                result = info.destination + (value - info.source);
+            }
+        }
+        result
+    }
 }
+
+
 
 fn main() {
     let data = fs::read_to_string("data.txt").expect("Unable to read file");
@@ -29,7 +69,9 @@ fn main() {
 }
 
 fn part_one(data: &String) -> u32 {
-    0
+    let converter = Converter::new("".to_string());
+    let converted = converter.convert(0);
+    converted
 }
 
 // fn part_two(data: &String) -> u32 {
@@ -42,6 +84,33 @@ fn part_one(data: &String) -> u32 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_converter() {
+        let data = "seed-to-soil map:
+50 98 2
+52 50 48
+";
+
+        let converter = Converter::new(data.to_string());
+
+        assert_eq!(converter.from, "seed");
+        assert_eq!(converter.to, "soil");
+        assert_eq!(converter.values.len(), 2);
+
+        assert_eq!(converter.values[0].destination, 50);
+        assert_eq!(converter.values[0].source, 98);
+        assert_eq!(converter.values[0].range, 2);
+
+        assert_eq!(converter.values[1].destination, 52);
+        assert_eq!(converter.values[1].source, 50);
+        assert_eq!(converter.values[1].range, 48);
+
+        assert_eq!(converter.convert(79), 81);
+        assert_eq!(converter.convert(14), 14);
+        assert_eq!(converter.convert(55), 57);
+        assert_eq!(converter.convert(13), 13);
+    }
 
     #[test]
     fn test_part_one() {
