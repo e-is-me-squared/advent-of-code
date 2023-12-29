@@ -1,9 +1,9 @@
 use std::fs;
 
 struct ConvertInfo {
-    destination: u32,
-    source: u32,
-    range: u32,
+    destination: u64,
+    source: u64,
+    range: u64,
 }
 
 struct Converter {
@@ -29,7 +29,7 @@ impl Converter {
 
         let data = data.map(|line| {
             let mut line = line.split_whitespace();
-            let mut parse_next_number = || line.next().unwrap().parse::<u32>().unwrap();
+            let mut parse_next_number = || line.next().unwrap().parse::<u64>().unwrap();
 
             ConvertInfo {
                 destination: parse_next_number(),
@@ -45,7 +45,7 @@ impl Converter {
         }
     }
 
-    fn convert(&self, value: u32) -> u32 {
+    fn convert(&self, value: u64) -> u64 {
         let mut result = value;
         for info in &self.values {
             if value >= info.source && value < info.source + info.range {
@@ -56,7 +56,48 @@ impl Converter {
     }
 }
 
+struct ProductionPipeline {
+    converters: Vec<Converter>,
+}
 
+impl ProductionPipeline {
+    fn new(data: String) -> ProductionPipeline {
+        let mut converters = vec![];
+        let mut looped = "".to_string();
+
+        let mut add_converter = |data: String| {
+            let converter = Converter::new(data);
+            converters.push(converter);
+        };
+
+        data.lines().for_each(|line| {
+            if line == "" {
+                add_converter(looped.to_string());
+                looped = "".to_string();
+            } else {
+                looped.push_str(line);
+                looped.push_str("\n");
+            }
+        });
+
+        add_converter(looped.to_string());
+
+        ProductionPipeline { converters }
+    }
+
+    fn convert(&self, seed: u64) -> u64 {
+        let mut result = seed;
+        println!("Seed: {:?}", result);
+        for converter in &self.converters {
+            result = converter.convert(result);
+        }
+        result
+    }
+}
+
+/**
+* NOTE: Puzzle
+*/
 
 fn main() {
     let data = fs::read_to_string("data.txt").expect("Unable to read file");
@@ -68,18 +109,45 @@ fn main() {
     // println!("Part two: {:?}", result);
 }
 
-fn part_one(data: &String) -> u32 {
-    let converter = Converter::new("".to_string());
-    let converted = converter.convert(0);
-    converted
+fn get_seeds(data: &String) -> Vec<u64> {
+    data.lines()
+        .next()
+        .unwrap()
+        .split(":")
+        .skip(1)
+        .next()
+        .unwrap()
+        .trim()
+        .split_whitespace()
+        .map(|n| n.parse::<u64>().unwrap())
+        .collect::<Vec<_>>()
 }
 
-// fn part_two(data: &String) -> u32 {
+fn part_one(data: &String) -> u64 {
+    let seeds = get_seeds(data);
+    let data = data.lines().skip(2).collect::<Vec<_>>().join("\n");
+    let production = ProductionPipeline::new(data.to_string());
+    let mut lowest_converted = u64::max_value();
+
+    seeds.iter().for_each(|seed| {
+        let result = production.convert(*seed);
+        if result < lowest_converted {
+            lowest_converted = result;
+        }
+    });
+    lowest_converted
+}
+
+// fn part_two(data: &String) -> u64 {
 //     let mut collection = CardCollection::from_data(data);
 //
 //     collection.fill_with_bonus_cards();
 //     collection.get_bonus_points()
 // }
+
+/**
+* NOTE: Tests
+*/
 
 #[cfg(test)]
 mod tests {
