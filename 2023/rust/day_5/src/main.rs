@@ -144,18 +144,17 @@ fn part_two(data: &String) -> u64 {
     let production = ProductionPipeline::new(data.to_string());
     let mut lowest_converted = u64::max_value();
 
+    // TODO: This bruteforce method works with the test data but is way too slow for the actual data,
+    // need to find a better way
     for i in 0..seeds.len() {
         if i % 2 == 1 {
             continue;
         }
+        // println!("{} / {}", i, seeds.len());
 
         for j in 0..seeds[i + 1] {
             let seed = seeds[i] + j;
-
-            let mut seeds = seeds.clone();
-            seeds[i] += j;
             let result = production.convert(seed);
-            println!("{} -> {}", seed, result);
             if result < lowest_converted {
                 lowest_converted = result;
             }
