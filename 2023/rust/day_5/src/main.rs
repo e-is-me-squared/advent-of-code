@@ -139,20 +139,31 @@ fn part_one(data: &String) -> u64 {
 
 fn part_two(data: &String) -> u64 {
     let seeds = get_seeds(data);
+
     let data = data.lines().skip(2).collect::<Vec<_>>().join("\n");
     let production = ProductionPipeline::new(data.to_string());
     let mut lowest_converted = u64::max_value();
 
-    seeds.iter().for_each(|seed| {
-        let result = production.convert(*seed);
-        if result < lowest_converted {
-            lowest_converted = result;
+    for i in 0..seeds.len() {
+        if i % 2 == 1 {
+            continue;
         }
-    });
+
+        for j in 0..seeds[i + 1] {
+            let seed = seeds[i] + j;
+
+            let mut seeds = seeds.clone();
+            seeds[i] += j;
+            let result = production.convert(seed);
+            println!("{} -> {}", seed, result);
+            if result < lowest_converted {
+                lowest_converted = result;
+            }
+        }
+    }
+
     lowest_converted
 }
-
-
 
 /**
 * NOTE: Tests
