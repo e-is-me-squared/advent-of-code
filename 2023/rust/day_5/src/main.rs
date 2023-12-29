@@ -87,7 +87,6 @@ impl ProductionPipeline {
 
     fn convert(&self, seed: u64) -> u64 {
         let mut result = seed;
-        println!("Seed: {:?}", result);
         for converter in &self.converters {
             result = converter.convert(result);
         }
@@ -105,8 +104,8 @@ fn main() {
     let result = part_one(&data);
     println!("Part one: {:?}", result);
 
-    // let result = part_two(&data);
-    // println!("Part two: {:?}", result);
+    let result = part_two(&data);
+    println!("Part two: {:?}", result);
 }
 
 fn get_seeds(data: &String) -> Vec<u64> {
@@ -138,12 +137,22 @@ fn part_one(data: &String) -> u64 {
     lowest_converted
 }
 
-// fn part_two(data: &String) -> u64 {
-//     let mut collection = CardCollection::from_data(data);
-//
-//     collection.fill_with_bonus_cards();
-//     collection.get_bonus_points()
-// }
+fn part_two(data: &String) -> u64 {
+    let seeds = get_seeds(data);
+    let data = data.lines().skip(2).collect::<Vec<_>>().join("\n");
+    let production = ProductionPipeline::new(data.to_string());
+    let mut lowest_converted = u64::max_value();
+
+    seeds.iter().for_each(|seed| {
+        let result = production.convert(*seed);
+        if result < lowest_converted {
+            lowest_converted = result;
+        }
+    });
+    lowest_converted
+}
+
+
 
 /**
 * NOTE: Tests
@@ -222,7 +231,45 @@ humidity-to-location map:
         assert_eq!(result, 35);
     }
 
-    //     #[test]
-    //     fn test_part_two() {
-    //     }
+    #[test]
+    fn test_part_two() {
+        let data = "seeds: 79 14 55 13
+
+seed-to-soil map:
+50 98 2
+52 50 48
+
+soil-to-fertilizer map:
+0 15 37
+37 52 2
+39 0 15
+
+fertilizer-to-water map:
+49 53 8
+0 11 42
+42 0 7
+57 7 4
+
+water-to-light map:
+88 18 7
+18 25 70
+
+light-to-temperature map:
+45 77 23
+81 45 19
+68 64 13
+
+temperature-to-humidity map:
+0 69 1
+1 0 69
+
+humidity-to-location map:
+60 56 37
+56 93 4"
+            .to_string();
+
+        let result = part_two(&data);
+
+        assert_eq!(result, 46);
+    }
 }
