@@ -38,11 +38,29 @@ impl Converter {
             }
         });
 
+        //sort by source
+        let mut data = data.collect::<Vec<_>>();
+        data.sort_by(|a, b| a.source.cmp(&b.source));
+
         Converter {
             from,
             to,
-            values: data.collect(),
+            values: data,
         }
+    }
+
+    fn find_next_converter_source(&self, seed: u64) -> (bool, u64) {
+        let mut first_iteration = true;
+        for info in &self.values {
+            if first_iteration && seed < info.source {
+                return (true, info.source);
+            }
+            first_iteration = false;
+            if seed >= info.source && seed < info.source + info.range {
+                return (true, info.source + info.range);
+            }
+        }
+        (false, 0)
     }
 
     fn convert(&self, value: u64) -> u64 {
@@ -150,7 +168,7 @@ fn part_two(data: &String) -> u64 {
         if i % 2 == 1 {
             continue;
         }
-        // println!("{} / {}", i, seeds.len());
+        println!("{} / {}", i, seeds.len());
 
         for j in 0..seeds[i + 1] {
             let seed = seeds[i] + j;
@@ -185,18 +203,23 @@ mod tests {
         assert_eq!(converter.to, "soil");
         assert_eq!(converter.values.len(), 2);
 
-        assert_eq!(converter.values[0].destination, 50);
-        assert_eq!(converter.values[0].source, 98);
-        assert_eq!(converter.values[0].range, 2);
+        assert_eq!(converter.values[1].destination, 50);
+        assert_eq!(converter.values[1].source, 98);
+        assert_eq!(converter.values[1].range, 2);
 
-        assert_eq!(converter.values[1].destination, 52);
-        assert_eq!(converter.values[1].source, 50);
-        assert_eq!(converter.values[1].range, 48);
+        assert_eq!(converter.values[0].destination, 52);
+        assert_eq!(converter.values[0].source, 50);
+        assert_eq!(converter.values[0].range, 48);
 
         assert_eq!(converter.convert(79), 81);
+        assert_eq!(converter.convert(98), 50);
         assert_eq!(converter.convert(14), 14);
         assert_eq!(converter.convert(55), 57);
         assert_eq!(converter.convert(13), 13);
+
+        assert_eq!(converter.find_next_converter_source(3), (true, 50));
+        assert_eq!(converter.find_next_converter_source(51), (true, 98));
+        assert_eq!(converter.find_next_converter_source(101), (false, 0));
     }
 
     #[test]
