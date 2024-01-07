@@ -1,5 +1,60 @@
 use std::fs;
 
+#[derive(Debug)]
+struct Race {
+    time: u64,
+    distance: u64,
+}
+
+impl Race {
+    fn new(time: u64, distance: u64) -> Race {
+        Race { time, distance }
+    }
+    fn num_of_possible_records(&self) -> u64 {
+        let mut records = 0;
+        for hold_time in 0..self.time {
+            let travel_time = self.time - hold_time;
+            let distance = travel_time * hold_time;
+            if distance > self.distance {
+                records += 1;
+            }
+        }
+        records
+    }
+}
+
+#[derive(Debug)]
+struct Track {
+    races: Vec<Race>,
+}
+
+impl Track {
+    fn new(data: String) -> Track {
+        let mut lines = data.lines();
+        let times = lines.next().unwrap().split(':').skip(1).next().unwrap();
+        let times = times.split_whitespace().map(|x| x.parse::<u64>().unwrap());
+
+        let distances = lines.next().unwrap().split(':').skip(1).next().unwrap();
+        let distances = distances
+            .split_whitespace()
+            .map(|x| x.parse::<u64>().unwrap());
+
+        let mut races = vec![];
+        for (time, distance) in times.zip(distances) {
+            races.push(Race::new(time, distance));
+        }
+
+        Track { races }
+    }
+
+    fn get_num_of_records(&self) -> Vec<u64> {
+        self.races
+            .iter()
+            .map(|x| x.num_of_possible_records())
+            .collect::<Vec<u64>>()
+    }
+}
+
 /**
 * NOTE: Puzzle
 */
@@ -15,7 +70,14 @@ fn main() {
 }
 
 fn part_one(data: &String) -> u64 {
-    0
+    let race = Track::new(data.to_string());
+    let records = race
+        .get_num_of_records()
+        .iter()
+        .copied()
+        .reduce(|a, b| a * b)
+        .unwrap();
+    records
 }
 
 // fn part_two(data: &String) -> u64 {
